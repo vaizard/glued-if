@@ -1,1 +1,3 @@
-# glued-integrations
+# glued-if
+
+Glued Integration Framework
