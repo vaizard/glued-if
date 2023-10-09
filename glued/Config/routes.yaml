@@ -61,7 +61,7 @@ routes:
     be_if_logs_v1:
         pattern:    ${routes.be_if.path}/logs/v1
         path:       ${routes.be_if.path}/logs/v1
-        label:      IF Statistics
+        label:      IF Logs
         dscr:       Interface logs
         service:    if
         methods:

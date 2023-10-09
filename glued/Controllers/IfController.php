@@ -129,6 +129,13 @@ class IfController extends AbstractController
         return $response->withJson($res);
     }
 
+    public function stats_r1(Request $request, Response $response, array $args = []): Response
+    {
+        $res = ['status' => 'ok', 'message' => 'This endpoint is under development.'];
+        return $response->withJson($res);
+    }
+
+
 }
 
 
