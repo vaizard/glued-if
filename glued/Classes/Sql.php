@@ -16,7 +16,7 @@ class Sql
                c_ts_responded as `ts_responded`,
                c_data as `data`,
                TIMESTAMPDIFF(SECOND, c_ts_requested, c_ts_responded) AS duration,
-               c_ok AS ok,
+               c_status AS ok,
                c_response_hash as response_hash,
                c_response_fid as response_fid,
                TIMESTAMPDIFF(SECOND, c_ts_requested, NOW()) AS requested_ago
@@ -56,7 +56,7 @@ class Sql
             IFNULL(log.c_ts_requested, 0) AS log_req,
             IFNULL(log.c_ts_responded, 0) AS log_res,
             TIMESTAMPDIFF(SECOND, log.c_ts_requested, c_ts_responded) AS log_duration,
-            log.c_ok AS log_ok,
+            log.c_status AS log_ok,
             log.c_response_hash AS log_hash,
             log.c_response_fid AS log_fid,
             TIMESTAMPDIFF(SECOND, log.c_ts_requested, NOW()) AS log_ago,
