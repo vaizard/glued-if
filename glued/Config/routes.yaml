@@ -17,8 +17,8 @@ routes:
     #########################################################
 
     be_if_health_v1:
-        pattern:    ${routes.be_if.path}/health/v1
-        path:       ${routes.be_if.path}/health/v1
+        pattern:    ${routes.be_if.path}/v1/health
+        path:       ${routes.be_if.path}/v1/health
         label:      if health
         dscr:       A healthcheck endpoint for the integration framework microservice.
         service:    IF
@@ -31,8 +31,8 @@ routes:
     #########################################################
 
     be_if_services_v1:
-        pattern:    ${routes.be_if.path}/services/v1
-        path:       ${routes.be_if.path}/services/v1
+        pattern:    ${routes.be_if.path}/v1/services
+        path:       ${routes.be_if.path}/v1/services
         label:      IF Services
         dscr:       People-friendly navigation.
         service:    if
@@ -41,8 +41,8 @@ routes:
             post:   Glued\Controllers\IfController:services_c1
 
     be_if_queue_v1:
-        pattern:    ${routes.be_if.path}/queue/v1
-        path:       ${routes.be_if.path}/queue/v1
+        pattern:    ${routes.be_if.path}/v1/queue
+        path:       ${routes.be_if.path}/v1/queue
         label:      IF Queue
         dscr:       Interface queue
         service:    if
@@ -50,8 +50,8 @@ routes:
             get:    Glued\Controllers\IfController:queue_r1
 
     be_if_stats_v1:
-        pattern:    ${routes.be_if.path}/stats/v1
-        path:       ${routes.be_if.path}/stats/v1
+        pattern:    ${routes.be_if.path}/v1/stats
+        path:       ${routes.be_if.path}/v1/stats
         label:      IF Statistics
         dscr:       Interface statistics
         service:    if
@@ -59,8 +59,8 @@ routes:
             get:    Glued\Controllers\IfController:stats_r1
 
     be_if_logs_v1:
-        pattern:    ${routes.be_if.path}/logs/v1
-        path:       ${routes.be_if.path}/logs/v1
+        pattern:    ${routes.be_if.path}/v1/logs
+        path:       ${routes.be_if.path}/v1/logs
         label:      IF Logs
         dscr:       Interface logs
         service:    if
@@ -68,8 +68,8 @@ routes:
             get:    Glued\Controllers\IfController:logs_r1
 
     be_if_reg_v1:
-        pattern:    ${routes.be_if.path}/reg/v1
-        path:       ${routes.be_if.path}/reg/v1
+        pattern:    ${routes.be_if.path}/v1/reg
+        path:       ${routes.be_if.path}/v1/reg
         label:      IF Register
         dscr:       Interface action register
         service:    if

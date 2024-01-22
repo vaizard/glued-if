@@ -13,13 +13,12 @@ $app->options('/{routes:.+}', function (Request $request, Response $response, $a
     return $response->withStatus(204);
 })->setName('fallback_options');
 
-
 foreach ($settings['routes'] as $name => $leaf) {
     if (isset($leaf['methods'])) {
         foreach ($leaf['methods'] as $request => $method) {
-              $route = $app->$request($leaf['path'], $method);
-              $route = $route->setName($name);
-        }    
+            $route = $app->$request($leaf['pattern'], $method);
+            $route = $route->setName($name);
+        }
     }
 }
 

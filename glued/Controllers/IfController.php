@@ -105,8 +105,8 @@ class IfController extends AbstractController
         $r = $this->mysqli->execute_query($qs,array_values($rp));
         $res['status'] = 'ok';
         foreach ($r as $i) {
-            $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/svc/' . $i['svc_type'] . '/act/v1?act_uuid=' . $i['act_uuid'];
-            $i['log'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/logs/v1?act_uuid=' . $i['act_uuid'];
+            $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/svc/' . $i['svc_type'] . '/act/' . $i['act_uuid'];
+            $i['log'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/logs/' . $i['act_uuid'];
             $res['data'][] = $i;
         }
         return $response->withJson($res);
@@ -122,8 +122,8 @@ class IfController extends AbstractController
         $r = $this->mysqli->execute_query($qs,array_values($rp));
         $res['status'] = 'ok';
         foreach ($r as $i) {
-            $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/svc/' . $i['svc_type'] . '/act/v1?act_uuid=' . $i['act_uuid'];
-            $i['log'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/logs/v1?act_uuid=' . $i['act_uuid'];
+            $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/svc/' . $i['svc_type'] . '/act/' . $i['act_uuid'];
+            $i['log'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/logs/' . $i['act_uuid'];
             $res['data'][] = $i;
         }
         return $response->withJson($res);
