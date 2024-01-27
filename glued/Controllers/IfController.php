@@ -30,11 +30,20 @@ class IfController extends AbstractController
         return $response->withJson($data);
     }
 
-
-    public function logs_r1(Request $request, Response $response, array $args = []): Response
+    private function getServices() {
+        $filteredRoutes = array_filter($this->settings['routes'], function ($route) {
+            return isset($route['service']) && strpos($route['service'], 'if/') === 0;
+        });
+        $uniqueServices = array_unique(array_column($filteredRoutes, 'service'));
+        $uniqueServices = array_values(array_map(function ($service) {
+            return str_replace('if/', '', $service);
+        }, $uniqueServices));
+        return $uniqueServices;
+    }
+    public function runs_r1(Request $request, Response $response, array $args = []): Response
     {
         $rp = $this->utils->getQueryParams($request) ?? [];
-        $qs = (new Sql)->q['logs'];
+        $qs = (new Sql)->q['runs'];
         $qs = (new \Glued\Lib\QueryBuilder())->select($qs);
         $qs = $this->utils->mysqlQueryFromRequest($qs, $rp, 'c_data');
         $r = $this->mysqli->execute_query($qs,array_values($rp));
@@ -45,32 +54,33 @@ class IfController extends AbstractController
         return $response->withJson($res);
     }
 
-    public function services_r1(Request $request, Response $response, array $args = []): Response
+    public function hello_r1(Request $request, Response $response, array $args = []): Response
     {
-        $routes = array_filter($this->settings['routes'], function ($key) {
-            return strpos($key, 'be_if_svc') === 0;
-        }, ARRAY_FILTER_USE_KEY);
-        foreach ($routes as $route) {
-            $provides = $route['provides'] ?? '';
-            if ($provides === 'docs') {
-                $ret['label'] = $route['label'];
-                $ret['dscr'] = $route['dscr'];
-                $ret['url'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . $route['path'];
-                $svcs[] = $ret;
-            }
-        }
-        $payload['data'] = $svcs;
         $payload['help']['get'] = 'List all IF v1 compliant service providers (A `"provides": "docs"` route is present).';
         $payload['help']['post'] = 'Post a json according to `service docs` to this interface as a request body to add a service coupler.';
         $routes = array_filter($this->settings['routes'], function ($key) {
-            return strpos($key, 'be_if_') === 0 && strpos($key, 'be_if_svc') !== 0;
+            // return strpos($key, 'be_if_') === 0 &&
+            return strpos($key, 'be_if_svc') === 0;
         }, ARRAY_FILTER_USE_KEY);
         foreach ($routes as $route) {
             $f['txt'] = trim($route['label']. " / " . $route['dscr']);
             $f['uri'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . $route['path'];
             $payload['links'][] = $f;
         }
-        $payload['status'] = 'pl';
+        $payload['status'] = 'Ok';
+        return $response->withJson($payload);
+    }
+
+    public function services_r1(Request $request, Response $response, array $args = []): Response
+    {
+        $base = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'];
+        $svcs = [];
+        foreach ($this->getServices() as $key => $value) {
+            $svcs[$key]['name'] = $value;
+            $svcs[$key]['links'] = "{$base}/{$this->settings['routes']['be_if_deployments_v1']['path']}/$value/deployments";
+        }
+        $payload['status'] = 'Ok';
+        $payload['data'] = $svcs;
         return $response->withJson($payload);
     }
 
@@ -106,27 +116,37 @@ class IfController extends AbstractController
         $res['status'] = 'ok';
         foreach ($r as $i) {
             $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/svc/' . $i['svc_type'] . '/act/' . $i['act_uuid'];
-            $i['log'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/logs/' . $i['act_uuid'];
+            $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/runs/' . $i['act_uuid'];
             $res['data'][] = $i;
         }
         return $response->withJson($res);
     }
 
-    public function reg_r1(Request $request, Response $response, array $args = []): Response
+    public function deployments_r1(Request $request, Response $response, array $args = []): Response
     {
+
+        $data = [];
         $rp = $this->utils->getQueryParams($request) ?? [];
-        $override = [ [ 'row_num', '=', '1' ] ];
-        $qs = (new Sql)->q['queue'];
-        $qs = (new \Glued\Lib\QueryBuilder())->select($qs);
-        $qs = $this->utils->mysqlQueryFromRequest($qs, $rp, 'svc_data', override: $override);
-        $r = $this->mysqli->execute_query($qs,array_values($rp));
-        $res['status'] = 'ok';
-        foreach ($r as $i) {
-            $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/svc/' . $i['svc_type'] . '/act/' . $i['act_uuid'];
-            $i['log'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/logs/' . $i['act_uuid'];
-            $res['data'][] = $i;
+        $qs = (new Sql)->q['base1'];
+        //if ($args['svc'] ?? false) { $data[] = $args['svc']; $qs.= " and subquery.service = ?"; }
+        $data = array_values($rp) + $data;
+        $data = [];
+        $qs .= " and subquery.service = 'fio_cz'";
+        $res = $this->mysqli->execute_query($qs, $data);
+        foreach ($res as $row) {
+           // print_r($row); die();
+            $data = json_decode($row['json_result']); break; }
+        //print_r($data);
+        $fin['status'] = 'ok';
+        foreach ($data as &$i) {
+            //print_r($i); die();
+            //$i->runs = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/svc/' . $i['svc_type'] . '/act/' . $i['act_uuid'];
+            //$i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/runs/' . $i['act_uuid'];
         }
-        return $response->withJson($res);
+        $fin['data'] = $data;
+
+            //$res['data'][] = $i;
+        return $response->withJson($fin);
     }
 
     public function stats_r1(Request $request, Response $response, array $args = []): Response

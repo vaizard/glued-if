@@ -29,20 +29,43 @@ routes:
     #########################################################
     # IF / SERVICES                                         #
     #########################################################
+    # service is the microservice
+    # deployment is the host/auth combination
+    # actions are the runnable activities within a deployment
+
+    be_if_hello_v1:
+        pattern:    ${routes.be_if.path}/v1/hello
+        path:       ${routes.be_if.path}/v1/hello
+        label:      IF Hello
+        dscr:       People-friendly navigation.
+        service:    if
+        methods:
+            get:    Glued\Controllers\IfController:hello_r1
+
 
     be_if_services_v1:
-        pattern:    ${routes.be_if.path}/v1/services
+        pattern:    ${routes.be_if.path}/v1/services[/{svc}]
         path:       ${routes.be_if.path}/v1/services
         label:      IF Services
-        dscr:       People-friendly navigation.
+        dscr:       Services
         service:    if
         methods:
             get:    Glued\Controllers\IfController:services_r1
             post:   Glued\Controllers\IfController:services_c1
 
-    be_if_queue_v1:
-        pattern:    ${routes.be_if.path}/v1/queue
-        path:       ${routes.be_if.path}/v1/queue
+    be_if_deployments_v1:
+        pattern:    ${routes.be_if.path}/v1/services/{svc}/deployments[/{deploy}]
+        path:       ${routes.be_if.path}/v1/services
+        label:      IF Services
+        dscr:       People-friendly navigation.
+        service:    if
+        methods:
+            get:    Glued\Controllers\IfController:deployments_r1
+            post:   Glued\Controllers\IfController:deployments_c1
+
+    be_if_scheduler_v1:
+        pattern:    ${routes.be_if.path}/v1/scheduler
+        path:       ${routes.be_if.path}/v1/scheduler
         label:      IF Queue
         dscr:       Interface queue
         service:    if
@@ -58,20 +81,11 @@ routes:
         methods:
             get:    Glued\Controllers\IfController:stats_r1
 
-    be_if_logs_v1:
-        pattern:    ${routes.be_if.path}/v1/logs
-        path:       ${routes.be_if.path}/v1/logs
-        label:      IF Logs
-        dscr:       Interface logs
+    be_if_runs_v1:
+        pattern:    ${routes.be_if.path}/v1/runs
+        path:       ${routes.be_if.path}/v1/runs
+        label:      IF runs
+        dscr:       Interface runs
         service:    if
         methods:
-            get:    Glued\Controllers\IfController:logs_r1
-
-    be_if_reg_v1:
-        pattern:    ${routes.be_if.path}/v1/reg
-        path:       ${routes.be_if.path}/v1/reg
-        label:      IF Register
-        dscr:       Interface action register
-        service:    if
-        methods:
-            get:    Glued\Controllers\IfController:reg_r1
+            get:    Glued\Controllers\IfController:runs_r1
