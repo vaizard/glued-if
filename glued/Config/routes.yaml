@@ -53,9 +53,19 @@ routes:
             get:    Glued\Controllers\IfController:services_r1
             post:   Glued\Controllers\IfController:services_c1
 
-    be_if_deployments_v1:
+    be_if_service_deployments_v1:
         pattern:    ${routes.be_if.path}/v1/services/{svc}/deployments[/{deploy}]
         path:       ${routes.be_if.path}/v1/services
+        label:      IF Services
+        dscr:       People-friendly navigation.
+        service:    if
+        methods:
+            get:    Glued\Controllers\IfController:deployments_r1
+            post:   Glued\Controllers\IfController:deployments_c1
+
+    be_if_deployments_v1:
+        pattern:    ${routes.be_if.path}/v1/deployments[/{deploy}]
+        path:       ${routes.be_if.path}/v1/deployments
         label:      IF Services
         dscr:       People-friendly navigation.
         service:    if
