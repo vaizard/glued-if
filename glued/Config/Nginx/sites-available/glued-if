@@ -8,8 +8,9 @@ server {
         ##########################
 
         root /var/www/html/glued-if/public;
-        listen 8005 ssl http2 default_server;
-        listen [::]:8005 ssl http2 default_server;
+        listen 8005 ssl default_server;
+        listen [::]:8005 ssl default_server;
+        http2 on;
         include snippets/server/common.conf;
 
         ##########################
