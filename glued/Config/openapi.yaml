@@ -1,0 +1,162 @@
+openapi: 3.1.0
+info:
+  title: Glued IF (integration framework) Api
+  description: IF manages microservices interfacing Glued to foreign APIs, provides a message queue and facilitates job scheduling.
+  version: 1.0.0
+  x-glued-service: if
+servers:
+  - url: /api/if
+paths:
+  /:
+    x-glued-pathname: be_if
+    x-glued-provides: openapi
+    get:
+      x-glued-method: Glued\Controllers\IfController:getOpenapi
+      summary: IF OpenAPI specs / Ingress
+      description: IF Ingress point. Returns the OpenAPI YAML specification for the IF API.
+      operationId: IfIngress
+      responses:
+        '200':
+          description: Ok
+          content:
+            application/yaml:
+              schema:
+                type: string
+  /v1/health:
+    x-glued-pathname: be_if_health
+    x-glued-provides: health
+    get:
+      x-glued-method: Glued\Controllers\IfController:getHealth
+      summary: Healthcheck
+      description: A healthcheck endpoint.
+      operationId: IfGetHealth
+      responses:
+        '200':
+          description: Ok
+  /v1/services:
+    x-glued-pathname: be_if_services
+    x-glued-provides: service
+    get:
+      x-glued-method: Glued\Controllers\IfController:getServices
+      summary: Get services
+      description: Get all available services connectors.
+      operationId: IfGetServices
+      responses:
+        '200':
+          description: Ok
+  /v1/deployments:
+    x-glued-pathname: be_if_deployments
+    x-glued-provides: service
+    get:
+      x-glued-method: Glued\Controllers\IfController:getDeployments
+      summary: Get deployments
+      description: Get all service deployments (service connectors with associated remote host and auth)
+      operationId: IfGetDeployments
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+    post:
+      x-glued-method: Glued\Controllers\IfController:createDeployments
+      summary: Create deployments
+      operationId: IfPostDeployments
+      description: Create or update a deployment
+      responses:
+        '200':
+          description: Ok
+  /v1/deployments/{pattern}/{key}:
+    x-glued-pathname: be_if_deployment
+    x-glued-provides: service
+    get:
+      x-glued-method: Glued\Controllers\IfController:getDeployment
+      summary: Get deployment
+      description: Get a service deployments (service connector with associated remote host and auth)
+      operationId: IfGetDeployment
+      parameters:
+        - in: path
+          name: pattern
+          required: true
+          schema:
+            type: string
+            anyOf:
+              - name
+              - uuid
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+    put:
+      x-glued-method: Glued\Controllers\IfController:putDeployment
+      summary: Put deployment
+      operationId: IfPutDeployment
+      description: Update (replace) a deployment config
+      parameters:
+        - in: path
+          name: deploy
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ok
+
+  /v1/actions:
+    x-glued-pathname: be_if_actions
+    x-glued-provides: service
+    get:
+      x-glued-method: Glued\Controllers\IfController:getActions
+      summary: Get actions
+      description: Interface queue
+      operationId: IfGetActions
+      responses:
+        '200':
+          description: Ok
+
+components:
+  schemas:
+    IfDeployment:
+      type: object
+      required:
+        - uuid
+        - service
+        - name
+        - description
+        - interfaces
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        service:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        interfaces:
+          type: array
+          items:
+            type: object
+            required:
+              - connector
+            properties:
+              connector:
+                type: string
+              user:
+                type: string
+              pass:
+                type: string
+              db:
+                type: string
+              port:
+                type: string
+              host:
+                type: string

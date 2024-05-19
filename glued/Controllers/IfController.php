@@ -5,41 +5,93 @@ declare(strict_types=1);
 namespace Glued\Controllers;
 
 use Glued\Classes\Sql;
+use mysql_xdevapi\Exception;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use \PDO;
+use Glued\Lib\IfUtils;
 
 class IfController extends AbstractController
 {
 
-    /**
-     * Returns a health status response.
-     * @param  Request  $request
-     * @param  Response $response
-     * @param  array    $args
-     * @return Response Json result set.
-     */
-    public function health(Request $request, Response $response, array $args = []): Response {
-        $data = [
-            'timestamp' => microtime(),
-            'status' => 'ok',
-            'params' => $request->getQueryParams(),
-            'service' => basename(__ROOT__),
-            'provided-for' => $_SERVER['X-GLUED-AUTH-UUID'] ?? 'anon'
-        ];
-        return $response->withJson($data);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public function getOpenapi(Request $request, Response $response, array $args = []): Response
+    {
+        // Directory to look for paths
+        $path = "{$this->settings['glued']['datapath']}/{$this->settings['glued']['uservice']}/cache" ;
+        $filesWhitelist = ["openapi.json", "openapi.yaml", "openapi.yml"]; // Potential file names
+
+        foreach ($filesWhitelist as $file) {
+            $fullPath = rtrim($path, '/') . '/' . $file;
+            if (file_exists($fullPath)) {
+                $content = file_get_contents($fullPath);
+                $response->getBody()->write($content);
+                $contentType = 'application/json';
+                if (pathinfo($fullPath, PATHINFO_EXTENSION) === 'yaml' || pathinfo($fullPath, PATHINFO_EXTENSION) === 'yml') { $contentType = 'application/x-yaml'; }
+                return $response->withHeader('Content-Type', $contentType);
+            }
+        }
+        throw new \Exception("OpenAPI specification not found", 404);
     }
 
-    private function getServices() {
+
+    public function getHealth(Request $request, Response $response, array $args = []): Response {
+        try {
+            $check['service'] = basename(__ROOT__);
+            $check['timestamp'] = microtime();
+            $check['healthy'] = true;
+            $check['status']['postgres'] = $this->pg->query("select true as test")->fetch()['test'] ?? false;
+            $check['status']['auth'] = $_SERVER['X-GLUED-AUTH-UUID'] ?? 'anonymous';
+        } catch (Exception $e) {
+            $check['healthy'] = false;
+            return $response->withJson($check);
+        }
+        return $response->withJson($check);
+        /*
+        $db = new \Glued\Lib\Sql($this->pg, 'your_table');
+        $db->where('uuid', '=', '8f337987-9b3e-4285-a0f4-4bd70101bd07');
+        //$db->createBatch([['prca' => 'puc'],['prcb' => 'puc'],['prca' => 'pucaaaaaaaaaaaaaa', "uuid" => "92955e5d-76d6-4b8b-8376-2d1be820ee7d"]], true);
+        //$db->stmt->debugDumpParams();
+        $db->update("92955e5d-76d6-4b8b-8376-2d1be820ee7d", ['prca' => '11113', "uuid" => "92955e5d-76d6-4b8b-8376-2d1be820ee7d"]);
+        //$data['d'] = $db->debug();
+        $db->delete('92955e5d-76d6-4b8b-8376-2d1be820ee7d');
+        //echo $db->stmt->rowCount();
+        $data['r'] = $db->getAll();
+        //$data = $db->get('8f337987-9b3e-4285-a0f4-4bd70101bd07');
+        //$data = $db->getAll();
+        //return $response;*/
+    }
+
+    public function getServices(Request $request, Response $response, array $args = []): Response {
         $filteredRoutes = array_filter($this->settings['routes'], function ($route) {
             return isset($route['service']) && strpos($route['service'], 'if/') === 0;
         });
         $uniqueServices = array_unique(array_column($filteredRoutes, 'service'));
         $uniqueServices = array_values(array_map(function ($service) {
-            return str_replace('if/', '', $service);
+            $svc = str_replace('if/', '', $service);
+            return [
+                'service' => $svc,
+                'deployments' => $this->settings['glued']['baseuri'] . $this->settings['routes']['be_if_deployments']['pattern'] . "/name/" . $svc
+            ];
         }, $uniqueServices));
-        return $uniqueServices;
+        return $response->withJson($uniqueServices);
     }
+
+
+    public function deployments_r1(Request $request, Response $response, array $args = []): Response {
+        echo $this->ifutils->getDeploymentsJson($args['deploy'] ?? false);
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+}
+
+
+/*
     public function runs_r1(Request $request, Response $response, array $args = []): Response
     {
         $rp = $this->utils->getQueryParams($request) ?? [];
@@ -160,3 +212,5 @@ class IfController extends AbstractController
 // {"svc":{"type":"Caretag","name":"NEMCB Prod","host":"https:\/\/caretag-api.nemocnice.local","note": "Production environment (pavel.stratil-jun@fenix.cz)","freq":3600,"auth":{"UserName":"pavel.stratil-jun@fenix.cz","Password":"Administrator1!"}},"act":[{"type":"Assets","freq":3600},{"type":"AssetDefinition","freq":36000}]}
 // toalety - wc
 //
+
+*/

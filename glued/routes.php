@@ -1,10 +1,8 @@
 <?php
 
-/** @noinspection PhpUndefinedVariableInspection */
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Exception\HttpNotFoundException;
-
 
 /**
  * Catch-all route to serve a 204 options response

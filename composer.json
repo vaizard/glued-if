@@ -1,5 +1,5 @@
 {
-  "name": "vaizard/glued-integrations",
+  "name": "vaizard/glued-if",
   "description": "Integrations manager.",
   "license": "MIT",
   "authors": [
@@ -9,7 +9,7 @@
     }
   ],
   "require": {
-    "php": "^8.2",
+    "php": "^8.3",
     "ext-apcu": "*",
     "ext-bcmath": "*",
     "ext-curl": "*",
@@ -22,24 +22,19 @@
     "ext-readline": "*",
     "ext-soap": "*",
     "ext-xml": "*",
-    "grasmash/yaml-expander": "^3",
-    "league/flysystem": "^3",
-    "monolog/monolog": "^3",
+    "ext-pdo": "*",
+    "ext-pdo_pgsql": "*",
     "nyholm/psr7": "^1",
     "nyholm/psr7-server": "*",
-    "opis/json-schema": "^2",
     "php-di/php-di": "^7",
     "psr/http-message": "^1",
-    "phpfastcache/phpfastcache": "^9",
     "ramsey/uuid": "^4",
     "sabre/event": "^6",
-    "selective/transformer": "^1",
     "slim/http": "^1",
     "slim/slim": "^4",
-    "symfony/yaml": "^6",
-    "thingengineer/mysqli-database-class": "dev-master#42116651a88b57b03fd967bc57dd38f5094565d9",
     "vaizard/glued-lib": "dev-main",
-    "zeuxisoo/slim-whoops": "^0.7"
+    "zeuxisoo/slim-whoops": "^0.7",
+    "league/openapi-psr7-validator": "^0.22.0"
   },
   "require-dev": {
     "ergebnis/composer-normalize": "^2"
@@ -47,13 +42,6 @@
   "suggest": {
     "ext-xdebug": "For dev only"
   },
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/ThingEngineer/PHP-MySQLi-Database-Class",
-      "no-api": true
-    }
-  ],
   "minimum-stability": "beta",
   "prefer-stable": true,
   "autoload": {
@@ -83,8 +71,8 @@
     ],
     "configure": [
       "vendor/vaizard/glued-lib/src/Scripts/initpaths.sh",
-      "Glued\\Lib\\ComposerHooks::configTool",
-      "vendor/vaizard/glued-lib/src/Scripts/cacheroutes.sh"
+      "vendor/vaizard/glued-lib/src/Scripts/rebuild-datacache.sh",
+      "Glued\\Lib\\ComposerHooks::configTool"
     ],
     "migrate": [
       "vendor/vaizard/glued-lib/src/Scripts/migrate.sh"

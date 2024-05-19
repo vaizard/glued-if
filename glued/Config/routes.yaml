@@ -16,7 +16,7 @@ routes:
     # IF / HEALTH                                           #
     #########################################################
 
-    be_if_health_v1:
+    be_if_health:
         pattern:    ${routes.be_if.path}/v1/health
         path:       ${routes.be_if.path}/v1/health
         label:      if health
@@ -33,7 +33,7 @@ routes:
     # deployment is the host/auth combination
     # actions are the runnable activities within a deployment
 
-    be_if_hello_v1:
+    be_if_hello:
         pattern:    ${routes.be_if.path}/v1/hello
         path:       ${routes.be_if.path}/v1/hello
         label:      IF Hello
@@ -43,27 +43,16 @@ routes:
             get:    Glued\Controllers\IfController:hello_r1
 
 
-    be_if_services_v1:
-        pattern:    ${routes.be_if.path}/v1/services[/{svc}]
+    be_if_services:
+        pattern:    ${routes.be_if.path}/v1/services
         path:       ${routes.be_if.path}/v1/services
         label:      IF Services
         dscr:       Services
         service:    if
         methods:
             get:    Glued\Controllers\IfController:services_r1
-            post:   Glued\Controllers\IfController:services_c1
 
-    be_if_service_deployments_v1:
-        pattern:    ${routes.be_if.path}/v1/services/{svc}/deployments[/{deploy}]
-        path:       ${routes.be_if.path}/v1/services
-        label:      IF Services
-        dscr:       People-friendly navigation.
-        service:    if
-        methods:
-            get:    Glued\Controllers\IfController:deployments_r1
-            post:   Glued\Controllers\IfController:deployments_c1
-
-    be_if_deployments_v1:
+    be_if_deployments:
         pattern:    ${routes.be_if.path}/v1/deployments[/{deploy}]
         path:       ${routes.be_if.path}/v1/deployments
         label:      IF Services
@@ -73,7 +62,7 @@ routes:
             get:    Glued\Controllers\IfController:deployments_r1
             post:   Glued\Controllers\IfController:deployments_c1
 
-    be_if_scheduler_v1:
+    be_if_scheduler:
         pattern:    ${routes.be_if.path}/v1/scheduler
         path:       ${routes.be_if.path}/v1/scheduler
         label:      IF Queue
@@ -82,7 +71,7 @@ routes:
         methods:
             get:    Glued\Controllers\IfController:queue_r1
 
-    be_if_stats_v1:
+    be_if_stats:
         pattern:    ${routes.be_if.path}/v1/stats
         path:       ${routes.be_if.path}/v1/stats
         label:      IF Statistics
@@ -91,7 +80,7 @@ routes:
         methods:
             get:    Glued\Controllers\IfController:stats_r1
 
-    be_if_runs_v1:
+    be_if_runs:
         pattern:    ${routes.be_if.path}/v1/runs
         path:       ${routes.be_if.path}/v1/runs
         label:      IF runs
