@@ -82,10 +82,13 @@ class IfController extends AbstractController
         return $response->withJson($uniqueServices);
     }
 
-
-    public function deployments_r1(Request $request, Response $response, array $args = []): Response {
-        echo $this->ifutils->getDeploymentsJson($args['deploy'] ?? false);
-        return $response->withHeader('Content-Type', 'application/json');
+    public function getDeployments(Request $request, Response $response, array $args = []): Response
+    {
+        $db = new \Glued\Lib\Sql($this->pg, 'if__deployments');
+        $db->selectModifier = "jsonb_build_object('uri', concat('{$this->settings['glued']['baseuri']}/{$this->settings['routes']['be_if_svc_s4s']['pattern']}v1/', doc->>'uuid'), 'nonce', nonce, 'created_at', created_at, 'updated_at', updated_at) || ";
+        $data = $db->getAll();
+        //$db->stmt->debugDumpParams();
+        return $response->withJson($data);
     }
 
 }
@@ -133,28 +136,6 @@ class IfController extends AbstractController
         }
         $payload['status'] = 'Ok';
         $payload['data'] = $svcs;
-        return $response->withJson($payload);
-    }
-
-    public function deployments_c1(Request $request, Response $response, array $args = []): Response
-    {
-        $params = $request->getQueryParams();
-        $contentTypeHeader = $request->getHeaderLine('Content-Type') ?? '';
-        if ($contentTypeHeader !== 'application/json') { throw new \Exception('Invalid Content-Type. Please set `Content-Type: application/json', 400); }
-        $payload = $request->getParsedBody();
-        foreach ($payload as $item) {
-            $svc_uuid = \Ramsey\Uuid\Uuid::uuid4()->toString();
-            $svc_data = json_encode($item['deployment']);
-            $res = $this->mysqli->execute_query('SELECT bin_to_uuid(`c_uuid`,true) as svc_uuid FROM `t_if__deployments` WHERE JSON_CONTAINS(c_data, ?, "$")', [$svc_data]);
-            foreach ($res as $r) { $svc_uuid = $r['svc_uuid']; break; }
-            $this->mysqli->execute_query("INSERT INTO `t_if__deployments` ( `c_uuid`, `c_data` ) VALUES ( UUID_TO_BIN(?, true), ? ) ON DUPLICATE KEY UPDATE `c_data` = values(`c_data`)", [$svc_uuid, $svc_data]);
-
-            foreach ($item['actions'] as $a) {
-                $act_uuid = \Ramsey\Uuid\Uuid::uuid4()->toString();
-                $data = ['c_deployment_uuid' => $svc_uuid, 'c_uuid' => $act_uuid, 'c_data' => json_encode($a)];
-                $this->db->rawQuery('INSERT INTO `t_if__actions` ( `c_deployment_uuid`, `c_uuid`, `c_data` ) VALUES ( UUID_TO_BIN(?, true), UUID_TO_BIN(?, true), ? ) ON DUPLICATE KEY UPDATE `c_data` = VALUES(`c_data`)', $data);
-            }
-        }
         return $response->withJson($payload);
     }
 
