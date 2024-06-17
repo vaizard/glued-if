@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace Glued\Controllers;
 
-use Glued\Classes\Sql;
-use mysql_xdevapi\Exception;
-use Psr\Container\ContainerInterface;
+use Glued\Lib\Sql;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use \PDO;
-use Glued\Lib\IfUtils;
+use Glued\Lib\Controllers\AbstractService;
 
-class IfController extends AbstractController
+class IfController extends AbstractService
 {
 
 
@@ -20,52 +17,33 @@ class IfController extends AbstractController
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public function getOpenapi(Request $request, Response $response, array $args = []): Response
-    {
-        // Directory to look for paths
-        $path = "{$this->settings['glued']['datapath']}/{$this->settings['glued']['uservice']}/cache" ;
-        $filesWhitelist = ["openapi.json", "openapi.yaml", "openapi.yml"]; // Potential file names
-
-        foreach ($filesWhitelist as $file) {
-            $fullPath = rtrim($path, '/') . '/' . $file;
-            if (file_exists($fullPath)) {
-                $content = file_get_contents($fullPath);
-                $response->getBody()->write($content);
-                $contentType = 'application/json';
-                if (pathinfo($fullPath, PATHINFO_EXTENSION) === 'yaml' || pathinfo($fullPath, PATHINFO_EXTENSION) === 'yml') { $contentType = 'application/x-yaml'; }
-                return $response->withHeader('Content-Type', $contentType);
+    /*
+        public function getHealth(Request $request, Response $response, array $args = []): Response {
+            try {
+                $check['service'] = basename(__ROOT__);
+                $check['timestamp'] = microtime();
+                $check['healthy'] = true;
+                $check['status']['postgres'] = $this->pg->query("select true as test")->fetch()['test'] ?? false;
+                $check['status']['auth'] = $_SERVER['X-GLUED-AUTH-UUID'] ?? 'anonymous';
+            } catch (Exception $e) {
+                $check['healthy'] = false;
+                return $response->withJson($check);
             }
-        }
-        throw new \Exception("OpenAPI specification not found", 404);
-    }
-
-
-    public function getHealth(Request $request, Response $response, array $args = []): Response {
-        try {
-            $check['service'] = basename(__ROOT__);
-            $check['timestamp'] = microtime();
-            $check['healthy'] = true;
-            $check['status']['postgres'] = $this->pg->query("select true as test")->fetch()['test'] ?? false;
-            $check['status']['auth'] = $_SERVER['X-GLUED-AUTH-UUID'] ?? 'anonymous';
-        } catch (Exception $e) {
-            $check['healthy'] = false;
             return $response->withJson($check);
-        }
-        return $response->withJson($check);
-        /*
-        $db = new \Glued\Lib\Sql($this->pg, 'your_table');
-        $db->where('uuid', '=', '8f337987-9b3e-4285-a0f4-4bd70101bd07');
-        //$db->createBatch([['prca' => 'puc'],['prcb' => 'puc'],['prca' => 'pucaaaaaaaaaaaaaa', "uuid" => "92955e5d-76d6-4b8b-8376-2d1be820ee7d"]], true);
-        //$db->stmt->debugDumpParams();
-        $db->update("92955e5d-76d6-4b8b-8376-2d1be820ee7d", ['prca' => '11113', "uuid" => "92955e5d-76d6-4b8b-8376-2d1be820ee7d"]);
-        //$data['d'] = $db->debug();
-        $db->delete('92955e5d-76d6-4b8b-8376-2d1be820ee7d');
-        //echo $db->stmt->rowCount();
-        $data['r'] = $db->getAll();
-        //$data = $db->get('8f337987-9b3e-4285-a0f4-4bd70101bd07');
-        //$data = $db->getAll();
-        //return $response;*/
-    }
+
+            $db = new \Glued\Lib\Sql($this->pg, 'your_table');
+            $db->where('uuid', '=', '8f337987-9b3e-4285-a0f4-4bd70101bd07');
+            //$db->createBatch([['prca' => 'puc'],['prcb' => 'puc'],['prca' => 'pucaaaaaaaaaaaaaa', "uuid" => "92955e5d-76d6-4b8b-8376-2d1be820ee7d"]], true);
+            //$db->stmt->debugDumpParams();
+            $db->update("92955e5d-76d6-4b8b-8376-2d1be820ee7d", ['prca' => '11113', "uuid" => "92955e5d-76d6-4b8b-8376-2d1be820ee7d"]);
+            //$data['d'] = $db->debug();
+            $db->delete('92955e5d-76d6-4b8b-8376-2d1be820ee7d');
+            //echo $db->stmt->rowCount();
+            $data['r'] = $db->getAll();
+            //$data = $db->get('8f337987-9b3e-4285-a0f4-4bd70101bd07');
+            //$data = $db->getAll();
+            //return $response;*
+    }*/
 
     public function getServices(Request $request, Response $response, array $args = []): Response {
         $filteredRoutes = array_filter($this->settings['routes'], function ($route) {
@@ -76,7 +54,7 @@ class IfController extends AbstractController
             $svc = str_replace('if/', '', $service);
             return [
                 'service' => $svc,
-                'deployments' => $this->settings['glued']['baseuri'] . $this->settings['routes']['be_if_deployments']['pattern'] . "/name/" . $svc
+                'deployments' => $this->settings['glued']['baseuri'] . $this->settings['routes']['be_if_deployments']['pattern'] . "?service=" . $svc
             ];
         }, $uniqueServices));
         return $response->withJson($uniqueServices);
@@ -84,8 +62,36 @@ class IfController extends AbstractController
 
     public function getDeployments(Request $request, Response $response, array $args = []): Response
     {
-        $db = new \Glued\Lib\Sql($this->pg, 'if__deployments');
-        $db->selectModifier = "jsonb_build_object('uri', concat('{$this->settings['glued']['baseuri']}/{$this->settings['routes']['be_if_svc_s4s']['pattern']}v1/', doc->>'uuid'), 'nonce', nonce, 'created_at', created_at, 'updated_at', updated_at) || ";
+        $db = new Sql($this->pg, 'if__deployments');
+        $qp = $request->getQueryParams();
+        $filters = ['uuid', 'service'];
+        foreach ($filters as $filter) {
+            if (!empty($qp[$filter])) { $db->where($filter, '=', $qp[$filter]); }
+        }
+        $db->selectModifier = "jsonb_build_object('uri', concat('{$this->settings['glued']['baseuri']}{$this->settings['routes']['be_if']['pattern']}svc/', doc->>'service', '/v1/', doc->>'uuid'), 'nonce', nonce, 'created_at', created_at, 'updated_at', updated_at) || ";
+        $data = $db->getAll();
+        //$db->stmt->debugDumpParams();
+        return $response->withJson($data);
+    }
+
+    public function getDeployment(Request $request, Response $response, array $args = []): Response
+    {
+        if (empty($args['uuid'])) { throw new \Exception('No uuid specified', 404); }
+        $db = new Sql($this->pg, 'if__deployments');
+        $db->selectModifier = "jsonb_build_object('uri', concat('{$this->settings['glued']['baseuri']}{$this->settings['routes']['be_if']['pattern']}svc/', doc->>'service', '/v1/', doc->>'uuid'), 'nonce', nonce, 'created_at', created_at, 'updated_at', updated_at) || ";
+        $data = $db->get($args['uuid']);
+        return $response->withJson($data);
+    }
+
+    public function getActions(Request $request, Response $response, array $args = []): Response
+    {
+        $db = new Sql($this->pg, 'if__actions');
+        $qp = $request->getQueryParams();
+        $filters = ['svc_name', 'svc_version', 'svc_method', 'svc_deployment'];
+        foreach ($filters as $filter) {
+            if (!empty($qp[$filter])) { $db->where($filter, '=', $qp[$filter]); }
+        }
+        $db->selectModifier = "jsonb_build_object('uri', concat('{$this->settings['glued']['baseuri']}{$this->settings['routes']['be_if']['pattern']}svc/', doc->>'svc_name', '/v1/', doc->>'uuid'), 'nonce', nonce, 'created_at', created_at, 'updated_at', updated_at) || ";
         $data = $db->getAll();
         //$db->stmt->debugDumpParams();
         return $response->withJson($data);

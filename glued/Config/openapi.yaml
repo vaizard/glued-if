@@ -69,7 +69,7 @@ paths:
       responses:
         '200':
           description: Ok
-  /v1/deployments/{pattern}/{key}:
+  /v1/deployments/{uuid}:
     x-glued-pathname: be_if_deployment
     x-glued-provides: service
     get:
@@ -79,15 +79,7 @@ paths:
       operationId: IfGetDeployment
       parameters:
         - in: path
-          name: pattern
-          required: true
-          schema:
-            type: string
-            anyOf:
-              - name
-              - uuid
-        - in: path
-          name: key
+          name: uuid
           required: true
           schema:
             type: string
@@ -101,7 +93,7 @@ paths:
       description: Update (replace) a deployment config
       parameters:
         - in: path
-          name: deploy
+          name: uuid
           required: true
           schema:
             type: string
