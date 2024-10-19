@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Glued\Controllers;
 
 use Glued\Lib\Sql;
+use Glued\Lib\TsSql;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Glued\Lib\Controllers\AbstractService;
+use Selective\Transformer\ArrayTransformer;
 
 class IfController extends AbstractService
 {
@@ -97,107 +99,72 @@ class IfController extends AbstractService
         return $response->withJson($data);
     }
 
-}
+    /**
+     * Abstract method to get data from upstream (must be implemented in child classes).
+     * @return array
+     *
+     * @example Example implementation:
+     * ```php
+     *   $data = logic_getting_upstream_data();
+     *   return $data;
+     * ```
+     */
+    abstract protected function getUpstream(): array;
 
+    /**
+     * Abstract method to save raw and transformed upstream data (must be implemented in child classes).
+     *
+     * @param array $upstreamData The upstream data to save.
+     * @return bool True if saving succeeded, false otherwise.
+     *
+     * @example Example implementation:
+     *   ```php
+     *     $xf = new ArrayTransformer();
+     *     $xf->registerFilter("prefix", function ($value) { return "{$this->uuids['if:deployment']}/$value"; });
+     *     $xf->map("uuid", "uuid")
+     *        ->map("key1", "key2");
+     *     $tsdb = new TsSql($this->pg, "some_table_tsdb", "external_unique_id");
+     *     return $tsdb->CommonCreateBatch($upstreamData, $xf);
+     *   ```
+     */
+    abstract protected function saveUpstream(array $upstreamData): bool;
 
-/*
-    public function runs_r1(Request $request, Response $response, array $args = []): Response
+    /**
+     * Syncs upstream data if the last sync occurred more than the specified TTL (time-to-live).
+     *
+     * This method checks the cache for the last sync timestamp using the provided cache key.
+     * If the last sync occurred more than `syncedTtl` seconds ago, it will attempt to sync upstream data.
+     * After a successful sync, the cache is updated with the current timestamp.
+     * The method returns an HTTP-like status code based on the result of the sync.
+     *
+     * @param string $cacheKey      The key used to retrieve and store the sync timestamp in the cache.
+     * @param int    $syncedTtl     The time-to-live (in seconds) for considering the upstream sync as fresh. Defaults to 60 seconds.
+     * @param int    $staleTreshold The threshold (in seconds) for considering the upstream sync as stale. Defaults to 3600 seconds (1 hour).
+     *
+     * @return int Returns an HTTP-like status code:
+     *   - 200 if the upstream sync was successful.
+     *   - 203 if the sync was not performed (data from cache is returned).
+     *   - 502 if the sync failed and the last successful sync is older than the stale threshold.
+     */
+    public function syncUpstream(string $cacheKey, int $syncedTtl = 60, int $staleTreshold = 3600): int
     {
-        $rp = $this->utils->getQueryParams($request) ?? [];
-        $qs = (new \Glued\Lib\IfSql())->q['json:runs:all'];
-        $qs = (new \Glued\Lib\QueryBuilder())->select($qs);
-        $qs = $this->utils->mysqlQueryFromRequest($qs, $rp, 'c_data');
-        $r = $this->mysqli->execute_query($qs,array_values($rp));
-        $res['status'] = 'ok';
-        foreach ($r as $i) {
-            $res['data'][] = $i;
+        $cacheTtl      = 86400; // 24 hours in seconds
+        $syncedResult  = null;
+        $now           = time();
+
+        // Check if the last sync was more than 60 seconds ago, sync if yes
+        $syncedAt = $this->memcache->get($cacheKey, 0);
+        if (($now - $syncedAt) > $syncedTtl) {
+            $syncedResult = $this->saveUpstream($this->getUpstream());
+            if ($syncedResult === false) { $this->logger->error('Upstream sync failed.', ['cacheKey' => $cacheKey]); }
+            else { $this->memcache->set($cacheKey, $now, $cacheTtl); }
         }
-        return $response->withJson($res);
-    }
-
-    public function hello_r1(Request $request, Response $response, array $args = []): Response
-    {
-        $payload['help']['get'] = 'List all IF v1 compliant service providers (A `"provides": "docs"` route is present).';
-        $payload['help']['post'] = 'Post a json according to `service docs` to this interface as a request body to add a service coupler.';
-        $routes = array_filter($this->settings['routes'], function ($key) {
-            // return strpos($key, 'be_if_') === 0 &&
-            return strpos($key, 'be_if_svc') === 0;
-        }, ARRAY_FILTER_USE_KEY);
-        foreach ($routes as $route) {
-            $f['txt'] = trim($route['label']. " / " . $route['dscr']);
-            $f['uri'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . $route['path'];
-            $payload['links'][] = $f;
-        }
-        $payload['status'] = 'Ok';
-        return $response->withJson($payload);
-    }
-
-    public function services_r1(Request $request, Response $response, array $args = []): Response
-    {
-        $base = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'];
-        $svcs = [];
-        foreach ($this->getServices() as $key => $value) {
-            $svcs[$key]['name'] = $value;
-            $svcs[$key]['links'] = "{$base}/{$this->settings['routes']['be_if_deployments_v1']['path']}/$value/deployments";
-        }
-        $payload['status'] = 'Ok';
-        $payload['data'] = $svcs;
-        return $response->withJson($payload);
-    }
-
-
-    public function queue_r1(Request $request, Response $response, array $args = []): Response
-    {
-        $rp = $this->utils->getQueryParams($request) ?? [];
-        $override = [ [ 'next_in', '<', '0' ], [ 'row_num', '=', '1' ] ];
-        $qs = (new \Glued\Lib\IfSql())->q['json:runs:latest'];;
-        $qs = (new \Glued\Lib\QueryBuilder())->select($qs);
-        $qs = $this->utils->mysqlQueryFromRequest($qs, $rp, 'svc_data', override: $override);
-        $r = $this->mysqli->execute_query($qs,array_values($rp));
-        $res['status'] = 'ok';
-        foreach ($r as $i) {
-            $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/svc/' . $i['svc_type'] . '/act/' . $i['act_uuid'];
-            $i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/runs/' . $i['act_uuid'];
-            $res['data'][] = $i;
-        }
-        return $response->withJson($res);
-    }
-
-    public function deployments_r1(Request $request, Response $response, array $args = []): Response
-    {
-
-        $data = [];
-        $rp = $this->utils->getQueryParams($request) ?? [];
-        $qs = (new \Glued\Lib\IfSql())->q['json:runs:latest'];
-        if ($args['svc'] ?? false) { $data[] = $args['svc']; $qs.= " and subquery.service = ?"; }
-        $data = array_values($rp) + $data;
-        $res = $this->mysqli->execute_query($qs, $data);
-        foreach ($res as $row) {
-            $data = json_decode($row['json_result'], true); break; }
-        $fin['status'] = 'ok';
-        $base = "{$this->settings['glued']['protocol']}{$this->settings['glued']['hostname']}/api/if";
-        foreach ($data as $k => &$i) {
-            $data[$k]['links']['start'] = "{$base}/svc/{$i['service']}/v1/act/{$i['action']['uuid']}";
-            //$i['run'] = $this->settings['glued']['protocol'] . $this->settings['glued']['hostname'] . '/api/if/v1/runs/' . $i['act_uuid'];
-        }
-        $fin['data'] = $data;
-
-            //$res['data'][] = $i;
-        return $response->withJson($fin);
-    }
-
-    public function stats_r1(Request $request, Response $response, array $args = []): Response
-    {
-        $res = ['status' => 'ok', 'message' => 'This endpoint is under development.'];
-        return $response->withJson($res);
+        $status = ($syncedResult === false)
+            ? (($now - $syncedAt) > $staleTreshold ? 502 : 203)  // 502 if sync failed for >1 hour, else 203
+            : ($syncedResult === null ? 203 : 200);  // 203 if cached, 200 if sync successful
+        return $status;
     }
 
 
 }
 
-
-// {"svc":{"type":"Caretag","name":"NEMCB Prod","host":"https:\/\/caretag-api.nemocnice.local","note": "Production environment (pavel.stratil-jun@fenix.cz)","freq":3600,"auth":{"UserName":"pavel.stratil-jun@fenix.cz","Password":"Administrator1!"}},"act":[{"type":"Assets","freq":3600},{"type":"AssetDefinition","freq":36000}]}
-// toalety - wc
-//
-
-*/
