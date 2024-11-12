@@ -109,7 +109,10 @@ class IfController extends AbstractService
      *   return $data;
      * ```
      */
-    abstract protected function getUpstream(): array;
+    protected function getUpstream(): array
+    {
+        throw new \Exception("Method getUpstream() not implemented");
+    }
 
     /**
      * Abstract method to save raw and transformed upstream data (must be implemented in child classes).
@@ -127,8 +130,10 @@ class IfController extends AbstractService
      *     return $tsdb->CommonCreateBatch($upstreamData, $xf);
      *   ```
      */
-    abstract protected function saveUpstream(array $upstreamData): bool;
-
+    protected function saveUpstream(array $upstreamData): bool
+    {
+        throw new \Exception("Method getUpstream() not implemented");
+    }
     /**
      * Syncs upstream data if the last sync occurred more than the specified TTL (time-to-live).
      *
