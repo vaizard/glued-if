@@ -64,20 +64,14 @@ class IfController extends AbstractService
 
     public function getDeployments(Request $request, Response $response, array $args = []): Response
     {
-        $path = explode('/', trim($request->getUri()->getPath(), '/'));
-        if (implode('/', array_slice($path, 0, 3)) !== 'api/if/svc' || !isset($path[3])) {
-            throw new \Exception('Invalid path');
+        $db = new Sql($this->pg, 'if__deployments');
+        $qp = $request->getQueryParams();
+        $filters = ['uuid', 'service'];
+        foreach ($filters as $filter) {
+            if (!empty($qp[$filter])) { $db->where($filter, '=', $qp[$filter]); }
         }
-        $service =  $path[3];
-        $this->deployments->where('service', '=', $service);
-        $this->deployments->selectModifier = "jsonb_build_object('uri', concat('{$this->settings['glued']['baseuri']}{$this->settings['routes']['be_if']['pattern']}svc/', doc->>'service', '/v1/', doc->>'uuid')) || ";
-        $data = $this->deployments->getAll();
-        $xfi = new ArrayTransformer();
-        $xfi->map('uri', 'uri', 'required')
-            ->map('uuid', 'uuid', 'required')
-            ->map('name', 'name', 'required')
-            ->map('description', 'description');
-        $data = $xfi->toArrays($data);
+        $db->selectModifier = "jsonb_build_object('uri', concat('{$this->settings['glued']['baseuri']}{$this->settings['routes']['be_if']['pattern']}svc/', doc->>'service', '/v1/', doc->>'uuid'), 'nonce', nonce, 'created_at', created_at, 'updated_at', updated_at) || ";
+        $data = $db->getAll();
         return $response->withJson($data);
     }
 
