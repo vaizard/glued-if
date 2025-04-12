@@ -84,6 +84,7 @@ class IfController extends AbstractService
         return $response->withJson($data);
     }
 
+    /*
     public function getActions(Request $request, Response $response, array $args = []): Response
     {
         $db = new Sql($this->pg, 'if__actions');
@@ -97,7 +98,7 @@ class IfController extends AbstractService
         //$db->stmt->debugDumpParams();
         return $response->withJson($data);
     }
-
+*/
     /**
      * Abstract method to get data from upstream (must be implemented in child classes).
      * @return array

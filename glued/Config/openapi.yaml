@@ -101,18 +101,6 @@ paths:
         '200':
           description: Ok
 
-  /v1/actions:
-    x-glued-pathname: be_if_actions
-    x-glued-provides: service
-    get:
-      x-glued-method: Glued\Controllers\IfController:getActions
-      summary: Get actions
-      description: Interface queue
-      operationId: IfGetActions
-      responses:
-        '200':
-          description: Ok
-
 components:
   schemas:
     IfDeployment:
