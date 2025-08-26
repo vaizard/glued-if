@@ -69,6 +69,25 @@ paths:
       responses:
         '200':
           description: Ok
+  /v1/ingest:
+    x-glued-pathname: be_if_ingests
+    x-glued-provides: service
+    get:
+      x-glued-method: Glued\Controllers\IfController:getIngests
+      summary: Ingests
+      description: Get last external ingested data
+      operationId: IfGetIngests
+      responses:
+        '200':
+          description: Ok
+    post:
+      x-glued-method: Glued\Controllers\IfController:postIngests
+      summary: Ingest
+      operationId: IfPostIngests
+      description: Ingest a json data payload
+      responses:
+        '200':
+          description: Ok
   /v1/deployments/{uuid}:
     x-glued-pathname: be_if_deployment
     x-glued-provides: service

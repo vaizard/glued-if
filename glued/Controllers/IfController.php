@@ -84,6 +84,24 @@ class IfController extends AbstractService
         return $response->withJson($data);
     }
 
+
+    public function getIngests(Request $request, Response $response, array $args = []): Response
+    {
+        return $response->withJson(['message' => 'Not implemented.'])->withStatus(501);
+    }
+
+    public function postIngests(Request $request, Response $response, array $args = []): Response
+    {
+        if (($request->getHeader('Content-Type')[0] ?? '') != 'application/json') { throw new \Exception('Content-Type header missing or not set to `application/json`.', 400); };
+        $doc = $this->getValidatedRequestBody($request, $response);
+        //$db = new Sql($this->pg, 'grit_issues');
+        //$this->auditAuthor($db, $request->getHeader('X-glued-auth-uuid')[0]);
+        //$res = $db->create((array)$doc, true, true);
+        //return $response->withJson($res);
+        return $response->withJson($doc);
+    }
+
+
     /*
     public function getActions(Request $request, Response $response, array $args = []): Response
     {
