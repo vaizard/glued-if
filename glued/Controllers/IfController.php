@@ -99,7 +99,10 @@ class IfController extends AbstractService
         if (($request->getHeader('Content-Type')[0] ?? '') != 'application/json') { throw new \Exception('Content-Type header missing or not set to `application/json`.', 400); };
         $doc = $this->getValidatedRequestBody($request, $response);
         $db = new IngestAppend($this->pg, 'if__ingest_log');
-        $doc = $db->log($doc, '');
+        $doc = $db->log(
+            doc: $doc,
+            extId: ['alertId'] ?? '',
+            meta: (object) [ 'actorId' => $_SERVER['HTTP_X_GLUED_AUTH_UUID'] ?? null, 'actorIp' => $_SERVER['HTTP_X_REAL_IP'] ?? null ])
         return $response->withJson($doc);
     }
 
