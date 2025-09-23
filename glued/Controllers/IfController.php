@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Glued\Controllers;
 
-use Glued\Lib\IngestAppend;
+
+use Glued\Lib\Classes\Sql2\IngestRawLog;
 use Glued\Lib\Sql;
 use Glued\Lib\TsSql;
+
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Glued\Lib\Controllers\AbstractService;
@@ -85,11 +87,9 @@ class IfController extends AbstractService
         return $response->withJson($data);
     }
 
-
     public function getIngests(Request $request, Response $response, array $args = []): Response
     {
-        $db = new IngestAppend($this->pg, 'if__ingest_log');
-        //$db->limit = 10;
+        $db = new IngestRawLog($this->pg, 'if__ingest_log');
         $docs = $db->getAll();
         return $response->withJson($docs);
     }
@@ -98,8 +98,8 @@ class IfController extends AbstractService
     {
         if (($request->getHeader('Content-Type')[0] ?? '') != 'application/json') { throw new \Exception('Content-Type header missing or not set to `application/json`.', 400); };
         $doc = (object) $this->getValidatedRequestBody($request, $response);
-        $db = new IngestAppend($this->pg, 'if__ingest_log');
-        $doc = $db->log(
+        $db = new IngestRawLog($this->pg, 'if__ingest_log');
+        $doc = $db->append(
             doc: $doc,
             extId: $doc->alertId ?? '',
             meta: (object) [ 'actorId' => $_SERVER['HTTP_X_GLUED_AUTH_UUID'] ?? null, 'actorIp' => $_SERVER['HTTP_X_REAL_IP'] ?? null ]
@@ -108,21 +108,6 @@ class IfController extends AbstractService
     }
 
 
-    /*
-    public function getActions(Request $request, Response $response, array $args = []): Response
-    {
-        $db = new Sql($this->pg, 'if__actions');
-        $qp = $request->getQueryParams();
-        $filters = ['svc_name', 'svc_version', 'svc_method', 'svc_deployment'];
-        foreach ($filters as $filter) {
-            if (!empty($qp[$filter])) { $db->where($filter, '=', $qp[$filter]); }
-        }
-        $db->selectModifier = "jsonb_build_object('uri', concat('{$this->settings['glued']['baseuri']}{$this->settings['routes']['be_if']['pattern']}svc/', doc->>'svc_name', '/v1/', doc->>'uuid'), 'nonce', nonce, 'created_at', created_at, 'updated_at', updated_at) || ";
-        $data = $db->getAll();
-        //$db->stmt->debugDumpParams();
-        return $response->withJson($data);
-    }
-*/
     /**
      * Abstract method to get data from upstream (must be implemented in child classes).
      * @return array
