@@ -56,15 +56,11 @@
     }
   },
   "scripts": {
-    "post-install-cmd": [
+    "deploy": [
+      "composer update",
+      "composer migrate",
       "composer configure || echo \"[FAIL] Failed to configure glued. Please make sure all env variables are set. Rerun composer configure.\"",
-      "echo \"Run `composer nginx` manually to pick restart this microservice\"",
-      "composer migrate"
-    ],
-    "post-update-cmd": [
-      "composer configure || echo \"[FAIL] Failed to configure glued. Please make sure all env variables are set. Rerun composer configure.\"",
-      "echo \"Run `composer nginx` manually to pick restart this microservice\"",
-      "composer migrate"
+      "echo \"Run 'composer nginx' manually to pick restart this microservice\""
     ],
     "backup": [
       "vendor/vaizard/glued-lib/src/Scripts/backup.sh"
