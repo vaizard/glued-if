@@ -12,8 +12,8 @@ CREATE TABLE "if__deployments" (
     PRIMARY KEY ("uuid")
 );
 
-CREATE INDEX idx_service ON glued.if__deployments ("service");
-CREATE INDEX idx_name ON glued.if__deployments ("name");
+CREATE INDEX idx_service ON if__deployments ("service");
+CREATE INDEX idx_name ON if__deployments ("name");
 ALTER TABLE "if__deployments" ADD CONSTRAINT unique_nonce UNIQUE (nonce);
 
 COMMENT ON TABLE "if__deployments" IS 'Integration framework service deployments.';
