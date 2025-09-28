@@ -7,7 +7,7 @@ server {
         # Server setup           #
         ##########################
 
-        root /var/www/html/glued-if/public;
+        root $appbase/glued-if/public;
         listen 8005 ssl default_server;
         listen [::]:8005 ssl default_server;
         http2 on;
