@@ -36,4 +36,4 @@ CREATE INDEX if__ingest_log_nonce_iat        ON if__ingest_log (nonce, iat);
 
 -- migrate:down
 
-DROP TABLE IF EXISTS glued.if__ingest_log;
+DROP TABLE IF EXISTS if__ingest_log;
